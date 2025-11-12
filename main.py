@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import google.genai as genai
 from google.genai.types import Content, Part
 
+
+
 def parse_args(argv):
     # treat the first argument as the prompt (quoted by the shell)
     prompt = None

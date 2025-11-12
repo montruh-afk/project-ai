@@ -1,0 +1,40 @@
+import os, os.path
+
+
+def write_content(file_path, content) -> str:
+    try:
+        with open(file_path, "w") as f:
+            f.write(content)
+            return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
+            
+    except IsADirectoryError:
+        return f'Error writing content to {file_path}: is a directory'
+    except FileNotFoundError:
+        return f'Error: the file at {file_path} does not exist.'
+    except PermissionError:
+        return f'Error: You do not have the required permission to access the file.'
+    except OSError as e:
+        return f"Error reading file: {e}"
+        
+
+
+
+def write_file(working_directory, file_path, content):
+    relative_path = os.path.join(working_directory, file_path)
+    
+    # Relative path from root
+    absolute_path = os.path.abspath(relative_path)
+    
+    # Absolute path to the working directory
+    dir = os.path.abspath(working_directory)
+    
+    # Pathname up until the final directory (does not include files in said directory)
+    path_to_last_dir = os.path.join(working_directory, os.path.dirname(file_path))
+    
+    if not os.path.exists(os.path.abspath(path_to_last_dir)):
+        os.makedirs(os.path.abspath(path_to_last_dir))
+    if not absolute_path.startswith(dir):
+        return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
+    
+    return write_content(absolute_path, content)
+    
