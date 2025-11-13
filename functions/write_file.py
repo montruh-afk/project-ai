@@ -20,10 +20,8 @@ def write_content(file_path, content) -> str:
 
 
 def write_file(working_directory, file_path, content):
-    relative_path = os.path.join(working_directory, file_path)
-    
     # Relative path from root
-    absolute_path = os.path.abspath(relative_path)
+    absolute_path = os.path.abspath(os.path.join(working_directory, file_path))
     
     # Absolute path to the working directory
     dir = os.path.abspath(working_directory)
@@ -31,10 +29,11 @@ def write_file(working_directory, file_path, content):
     # Pathname up until the final directory (does not include files in said directory)
     path_to_last_dir = os.path.join(working_directory, os.path.dirname(file_path))
     
-    if not os.path.exists(os.path.abspath(path_to_last_dir)):
-        os.makedirs(os.path.abspath(path_to_last_dir))
     if not absolute_path.startswith(dir):
         return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
+    if not os.path.exists(os.path.abspath(path_to_last_dir)):
+        os.makedirs(os.path.abspath(path_to_last_dir))
+    
     
     return write_content(absolute_path, content)
     
