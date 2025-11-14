@@ -12,3 +12,4 @@ wheels/
 tests.py
 config.py
 *.txt
+variables.py

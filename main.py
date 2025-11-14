@@ -2,7 +2,9 @@
 import os, sys
 from dotenv import load_dotenv
 import google.genai as genai
+from google.genai import types
 from google.genai.types import Content, Part
+from variables import *
 
 
 
@@ -10,14 +12,11 @@ def parse_args(argv):
     # treat the first argument as the prompt (quoted by the shell)
     prompt = None
     verbose = False
-    rest = []
-    for a in argv:
-        if a == "--verbose":
-            verbose = True
-        elif prompt is None:
-            prompt = a
-        else:
-            rest.append(a)
+    if "--verbose" in argv:
+        verbose = True
+        prompt = ' '.join(argv).replace("--verbose", '')
+    else:
+        prompt = ' '.join(argv)
     return prompt, verbose
 
 def main():
@@ -36,8 +35,9 @@ def main():
 
     messages = [Content(role="user", parts=[Part(text=prompt)])]
     response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
+        model=MODEL_NAME,
         contents=messages,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
     )
 
     if verbose:
