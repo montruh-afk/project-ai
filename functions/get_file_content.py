@@ -1,6 +1,21 @@
 import os, os.path
 from functions.config import *
+from google.genai import types
 
+
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="returns the contents of a file.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The file to return contents of, relative to the working directory.",
+            ),
+        },
+    ),
+)
 
 def read_file_content(file_path):
     file_content_string = ''
