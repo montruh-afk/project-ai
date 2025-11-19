@@ -1,5 +1,5 @@
 import os, os.path
-from functions.config import *
+from functions.content_config import *
 from google.genai import types
 
 

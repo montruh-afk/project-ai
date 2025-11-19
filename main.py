@@ -9,6 +9,8 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
+from functions.delete import schema_delete_file
+from functions.create_file import schema_create_file
 
 
 
@@ -27,8 +29,8 @@ prompt, verbose = parse_args(sys.argv[1:])
 runs = 0
 messages = [Content(role="user", parts=[Part(text=prompt)])]
 
-def call_function(function_call_part, verbose=False):
-    args = function_call_part.args
+def call_function(function_call_part, verbose=False, get_part=False):
+    args = dict(function_call_part.args)
     args["working_directory"] = "./calculator"
     if verbose:
         print(f"Calling function: {function_call_part.name}({function_call_part.args})")
@@ -44,7 +46,7 @@ def call_function(function_call_part, verbose=False):
                     )
                 ],
             )
-    function_result = function_name[function_call_part.name](**function_call_part.args)
+    function_result = function_name[function_call_part.name](**args)
     tool_content = types.Content(
         role="tool",
         parts=[
@@ -59,7 +61,8 @@ def call_function(function_call_part, verbose=False):
                 name=function_call_part.name,
                 response={"result": function_result},
                 )
-    return tool_content, result_part
+    
+    return tool_content
 
 
 def main():
@@ -87,7 +90,9 @@ def main():
                     schema_get_files_info,
                     schema_get_file_content,
                     schema_run_python_file,
-                    schema_write_file
+                    schema_write_file,
+                    schema_delete_file, 
+                    schema_create_file
                     ]
                 )
             
@@ -106,12 +111,13 @@ def main():
                 break
             else:
                 for functions in response.function_calls:
-                    result, part = call_function(functions, verbose)
+                    result = call_function(functions, verbose)
                     if not result.parts[0].function_response.response:
                         raise Exception("An Unrecoverable error occoured")
                     elif verbose:
                         print(f"-> {result.parts[0].function_response.response}")
-                    result_parts.append(part)
+                    result_parts.append(result.parts[0])
+           
             if response.candidates:
                     for c in response.candidates:
                         if c and c.content:

@@ -13,3 +13,5 @@ tests.py
 config.py
 *.txt
 variables.py
+/calculator/backup
+content_config.py

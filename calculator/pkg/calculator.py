@@ -24,10 +24,10 @@ class Calculator:
             "/": divide,
         }
         self.precedence = {
-            "+": 2,
+            "+": 1,
             "-": 1,
-            "*": 3,
-            "/": 3,
+            "*": 2,
+            "/": 2,
         }
 
     def evaluate(self, expression):
@@ -58,7 +58,7 @@ class Calculator:
                 try:
                     values.append(float(token))
                     print(f"values: {values}")
-                except ValueError:
+                except ValueError:\
                     raise ValueError(f"invalid token: {token}")
 
         while operators:
