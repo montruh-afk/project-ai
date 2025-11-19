@@ -1,18 +1,33 @@
 # calculator.py
 
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+
+def multiply(a, b):
+    return a * b
+
+def divide(a, b):
+    if b == 0:
+        raise ValueError("division by zero")
+    return a / b
+
+
 class Calculator:
     def __init__(self):
         self.operators = {
-            "+": lambda a, b: a + b,
-            "-": lambda a, b: a - b,
-            "*": lambda a, b: a * b,
-            "/": lambda a, b: a / b,
+            "+": add,
+            "-": subtract,
+            "*": multiply,
+            "/": divide,
         }
         self.precedence = {
-            "+": 1,
+            "+": 2,
             "-": 1,
-            "*": 2,
-            "/": 2,
+            "*": 3,
+            "/": 3,
         }
 
     def evaluate(self, expression):
@@ -24,9 +39,12 @@ class Calculator:
     def _evaluate_infix(self, tokens):
         values = []
         operators = []
+        print(f"tokens: {tokens}")
 
         for token in tokens:
+            print(f"token: {token}")
             if token in self.operators:
+                print(f"operator: {token}")
                 while (
                     operators
                     and operators[-1] in self.operators
@@ -34,9 +52,12 @@ class Calculator:
                 ):
                     self._apply_operator(operators, values)
                 operators.append(token)
+                print(f"operators: {operators}")
+                print(f"values: {values}")
             else:
                 try:
                     values.append(float(token))
+                    print(f"values: {values}")
                 except ValueError:
                     raise ValueError(f"invalid token: {token}")
 
@@ -49,6 +70,9 @@ class Calculator:
         return values[0]
 
     def _apply_operator(self, operators, values):
+        print("Applying operator")
+        print(f"operators: {operators}")
+        print(f"values: {values}")
         if not operators:
             return
 
@@ -58,4 +82,7 @@ class Calculator:
 
         b = values.pop()
         a = values.pop()
+        print(f"a: {a}, b: {b}, operator: {operator}")
         values.append(self.operators[operator](a, b))
+        print(f"result: {values[-1]}")
+        print(f"values: {values}")

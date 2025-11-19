@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import google.genai as genai
 from google.genai import types
 from google.genai.types import Content, Part
-from variables import *
+from functions.config import *
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
@@ -65,7 +65,8 @@ def call_function(function_call_part, verbose=False):
 def main():
     try:
         global runs
-        while runs < 20:
+        #max iterations defaults to 20
+        while runs < MAX_ITERATIONS:
             result_parts = []
             
             
