@@ -16,6 +16,21 @@ schema_delete_file = types.FunctionDeclaration(
     ),
 )
 
+schema_delete_conversation_history = types.FunctionDeclaration(
+    name="delete_conversation_history",
+    description="Deletes the .json file that holds the conversation history, does not accept any arguments."
+    )
+
+def delete_conversation_history(working_directory=None):
+    try:
+        os.remove(os.path.abspath("./functions/saves/conversation_log.json"))
+        return f'Successfully cleared conversation history'
+    except FileNotFoundError:
+        return f'It seems our conversation logs are missing'
+    except Exception as e:
+        return f'Error: {e}'
+
+
 def delete(absolute_path, file_path):
     try:
         os.remove(absolute_path)

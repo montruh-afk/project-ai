@@ -3,31 +3,38 @@ import os, sys
 from dotenv import load_dotenv
 import google.genai as genai
 from google.genai import types
-from google.genai.types import Content, Part
 from functions.config import *
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
-from functions.delete import schema_delete_file
+from functions.delete import schema_delete_file, delete_conversation_history, schema_delete_conversation_history
 from functions.create_file import schema_create_file
+from functions.load import *
 
 
+
+# ensure the folder exists
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 def parse_args(argv):
     # treat the first argument as the prompt (quoted by the shell)
     prompt = None
     verbose = False
-    if "--verbose" in argv:
+    clear = False
+    if "--verbose" or "--Verbose" in argv:
         verbose = True
-        prompt = ' '.join(argv).replace("--verbose", '')
+        prompt = ''.join(argv).replace("--verbose", '')
+    if "--clear" or "--Clear" in argv:
+        clear = True
+        prompt = ' '.join(argv).replace("--clear", '').replace("--Clear", '')
     else:
         prompt = ' '.join(argv)
-    return prompt, verbose
+    return prompt, verbose, clear
 
-prompt, verbose = parse_args(sys.argv[1:])
 runs = 0
-messages = [Content(role="user", parts=[Part(text=prompt)])]
+prompt, verbose, clear = parse_args(sys.argv[1:])
+messages = load_messages(prompt)
 
 def call_function(function_call_part, verbose=False, get_part=False):
     args = dict(function_call_part.args)
@@ -57,11 +64,6 @@ def call_function(function_call_part, verbose=False, get_part=False):
             ],
         )
     
-    result_part = types.Part.from_function_response(
-                name=function_call_part.name,
-                response={"result": function_result},
-                )
-    
     return tool_content
 
 
@@ -80,10 +82,13 @@ def main():
                 sys.exit(1)
 
             client = genai.Client(api_key=api_key)
-            
             if not prompt:
-                print("Missing required input: *prompt*")
+                if clear:
+                    print(delete_conversation_history())
+                else:
+                    print("Missing required input: A prompt\nCommands: --clear to clear conversation history, --verbose to show more info")
                 sys.exit(1)
+            
             
             available_functions = types.Tool(
                 function_declarations=[
@@ -92,7 +97,7 @@ def main():
                     schema_run_python_file,
                     schema_write_file,
                     schema_delete_file, 
-                    schema_create_file
+                    schema_create_file,
                     ]
                 )
             
@@ -103,11 +108,12 @@ def main():
                 config=types.GenerateContentConfig(tools=[available_functions], system_instruction=SYSTEM_PROMPT)
             ) 
             
-            
+        
             
             finished = (not response.function_calls) and bool(response.text)
             if finished:
                 print(response.text)
+                save_messages(messages)
                 break
             else:
                 for functions in response.function_calls:
@@ -122,8 +128,10 @@ def main():
                     for c in response.candidates:
                         if c and c.content:
                             messages.append(c.content)
+                        
             if result_parts:
                 messages.append(types.Content(role="user", parts=result_parts)) 
+            save_messages(messages)
             if verbose:
                 print(f'User prompt: {prompt}')
                 print(f'Prompt tokens: {response.usage_metadata.prompt_token_count}')
@@ -132,6 +140,7 @@ def main():
             runs += 1
     except Exception as e:
         print(f'Something went wrong: {e}')
+        save_messages(messages)
 
 if __name__ == "__main__":
     main()
