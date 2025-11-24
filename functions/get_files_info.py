@@ -22,11 +22,21 @@ def file_size(absolute_path) -> str:
         items = os.listdir(absolute_path)
         for item in items:
             path = os.path.join(absolute_path, item)
-        
-            contents.append(f'{item}: file_size={os.path.getsize(path)}, is_dir={os.path.isdir(path)}')
+            try:
+                if os.path.isfile(path):
+                    contents.append(f'{item}: file_size={os.path.getsize(path)}, is_dir={os.path.isdir(path)}')
+                elif os.path.isdir(path):
+                    contents.append(f'{item}: is_dir={os.path.isdir(path)}')
+                    subdir_contents = file_size(path)
+                    if isinstance(subdir_contents, str):
+                        contents.extend(subdir_contents.splitlines())
+                    else:
+                        contents.extend(subdir_contents)
+            except OSError as e:
+                contents.append(f'Error reading file {item}: {e}')
         return "\n".join(contents)
     except FileNotFoundError:
-        return "Error: File does not exist"
+        return "Error: Directory does not exist"
     except PermissionError:
         return "You don't have the required permissions to access this folder"
     except OSError as e:

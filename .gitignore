@@ -9,10 +9,12 @@ wheels/
 # Virtual environments
 .venv
 .env
-tests.py
 config.py
 *.txt
 variables.py
-/calculator/backup
+*backup
 content_config.py
-/functions/saves
+*log
+*tests.py
+*test
+*changed

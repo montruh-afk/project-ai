@@ -3,6 +3,7 @@ import os, sys
 from dotenv import load_dotenv
 import google.genai as genai
 from google.genai import types
+from google.genai.types import Content, Part
 from functions.config import *
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
@@ -11,25 +12,28 @@ from functions.write_file import schema_write_file
 from functions.delete import schema_delete_file, delete_conversation_history, schema_delete_conversation_history
 from functions.create_file import schema_create_file
 from functions.load import *
+from functions.rename_fileordir import schema_rename_fileordir
+from functions.remove_empty_dir import schema_remove_empty_dir
 
-
+load_dotenv()
 
 # ensure the folder exists
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 def parse_args(argv):
-    # treat the first argument as the prompt (quoted by the shell)
     prompt = None
     verbose = False
     clear = False
-    if "--verbose" or "--Verbose" in argv:
-        verbose = True
-        prompt = ''.join(argv).replace("--verbose", '')
-    if "--clear" or "--Clear" in argv:
-        clear = True
-        prompt = ' '.join(argv).replace("--clear", '').replace("--Clear", '')
-    else:
-        prompt = ' '.join(argv)
+    try:
+        if "--verbose" in argv:
+            verbose = True
+            argv.remove("--verbose")
+        if "--clear" in argv:
+            clear = True
+            argv.remove("--clear")
+    except ValueError:
+        pass  # Handle the case where the flag is not in the list
+    prompt = ' '.join(argv)
     return prompt, verbose, clear
 
 runs = 0
@@ -38,7 +42,7 @@ messages = load_messages(prompt)
 
 def call_function(function_call_part, verbose=False, get_part=False):
     args = dict(function_call_part.args)
-    args["working_directory"] = "./calculator"
+    args["working_directory"] = "."
     if verbose:
         print(f"Calling function: {function_call_part.name}({function_call_part.args})")
     else:
@@ -70,12 +74,8 @@ def call_function(function_call_part, verbose=False, get_part=False):
 def main():
     try:
         global runs
-        #max iterations defaults to 20
         while runs < MAX_ITERATIONS:
             result_parts = []
-            
-            
-            load_dotenv()
             api_key = os.environ.get("GEMINI_API_KEY")
             if not api_key:
                 print("Missing GEMINI_API_KEY")
@@ -84,7 +84,7 @@ def main():
             client = genai.Client(api_key=api_key)
             if not prompt:
                 if clear:
-                    print(delete_conversation_history())
+                    print(delete_conversation_history("."))
                 else:
                     print("Missing required input: A prompt\nCommands: --clear to clear conversation history, --verbose to show more info")
                 sys.exit(1)
@@ -98,6 +98,8 @@ def main():
                     schema_write_file,
                     schema_delete_file, 
                     schema_create_file,
+                    schema_remove_empty_dir,
+                    schema_rename_fileordir
                     ]
                 )
             
@@ -108,12 +110,17 @@ def main():
                 config=types.GenerateContentConfig(tools=[available_functions], system_instruction=SYSTEM_PROMPT)
             ) 
             
-        
-            
             finished = (not response.function_calls) and bool(response.text)
             if finished:
                 print(response.text)
-                save_messages(messages)
+                try:
+                    save_messages(messages)
+                except Exception as e:
+                    print(f"Error saving messages: {e}")
+                if verbose:
+                    print(f'User prompt: {prompt}')
+                    print(f'Prompt tokens: {response.usage_metadata.prompt_token_count}')
+                    print(f'Response tokens: {response.usage_metadata.candidates_token_count}')
                 break
             else:
                 for functions in response.function_calls:
@@ -131,16 +138,18 @@ def main():
                         
             if result_parts:
                 messages.append(types.Content(role="user", parts=result_parts)) 
-            save_messages(messages)
-            if verbose:
-                print(f'User prompt: {prompt}')
-                print(f'Prompt tokens: {response.usage_metadata.prompt_token_count}')
-                print(f'Response tokens: {response.usage_metadata.candidates_token_count}')
-            
+            try:
+                save_messages(messages)
+            except Exception as e:
+                print(f"Error saving messages: {e}")
+
             runs += 1
     except Exception as e:
         print(f'Something went wrong: {e}')
-        save_messages(messages)
+        try:
+            save_messages(messages)
+        except Exception as e:
+            print(f"Error saving messages: {e}")
 
 if __name__ == "__main__":
     main()

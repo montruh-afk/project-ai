@@ -1,6 +1,6 @@
 import os, os.path
 from google.genai import types
-
+from functions.content_config import LOG_PATH
 
 schema_delete_file = types.FunctionDeclaration(
     name="delete_file",
@@ -21,22 +21,15 @@ schema_delete_conversation_history = types.FunctionDeclaration(
     description="Deletes the .json file that holds the conversation history, does not accept any arguments."
     )
 
-def delete_conversation_history(working_directory=None):
+def delete_conversation_history(working_directory):
+    log = LOG_PATH
     try:
-        os.remove(os.path.abspath("./functions/saves/conversation_log.json"))
+        os.remove(os.path.abspath(log))
         return f'Successfully cleared conversation history'
     except FileNotFoundError:
         return f'It seems our conversation logs are missing'
     except Exception as e:
         return f'Error: {e}'
-
-
-def delete(absolute_path, file_path):
-    try:
-        os.remove(absolute_path)
-        return f'Deleted {file_path}'
-    except Exception as e:
-        return f'An error occoured: {e}'
 
 
 def delete_file(working_directory, file_path):
@@ -55,4 +48,8 @@ def delete_file(working_directory, file_path):
         return f'Due to security concerns, I am not able to delete entire directories'
     if not os.path.exists(absolute_path):
         return 'File does not exist'
-    return delete(absolute_path, file_path)
+    try:
+        os.remove(absolute_path)
+        return f'Deleted {file_path}'
+    except Exception as e:
+        return f'An error occoured: {e}'
