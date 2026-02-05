@@ -3,7 +3,6 @@ import os, sys
 from dotenv import load_dotenv
 import google.genai as genai
 from google.genai import types
-from google.genai.types import Content, Part
 from functions.config import *
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
